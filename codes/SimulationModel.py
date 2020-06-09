@@ -131,5 +131,7 @@ def revenue(demand,price):
 
 if __name__ == '__main__':
     
-    generate_model_data()
-    FitModel()
+    #generate_model_data()
+    #FitModel()
+
+    
