@@ -66,7 +66,7 @@ def FindCriticalPrice(x,y):
     return cr_pts[0], max_revenue[0]
 
 def ReadSalesData(filename):
-    df = pd.read_csv(fname)
+    df = pd.read_csv(filename)
     X = df.drop(['weeks','demand'],axis=1) # remove weeks and demands, select features only
     y = df['demand']
     return X,y
