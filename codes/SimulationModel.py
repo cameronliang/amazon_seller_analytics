@@ -1,3 +1,13 @@
+################################################################################
+#
+# SimulationModel.py 		(c) Cameron Liang 
+#						Insight Data Science Fellowship Program 
+#     				    cameron.liang@gmail.com
+#
+# Produce mock sales data and perform model fit to test convergence of 
+# best-fit parameters in model and validity of online-learning methodology 
+################################################################################
+
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -118,15 +128,6 @@ def FitModel():
     df.to_csv('../../cleaned_data/simulations/params.csv')
 
     return params
-
-def revenue(demand,price):
-    """
-    R = D * p = (Dt * p) + D_sub * p,
-    where D_sub = Dp + Dx, 
-    Dp: demand on price
-    Dx: demand on other features
-    """
-    return demand*price 
 
 
 if __name__ == '__main__':
