@@ -44,7 +44,7 @@ def ReadSalesData(filename):
     y = df['demand']
     return time,X,y
 
-def LinearModelFit(X, y):
+def LinearModelFit(X, y, product_id = None, output = None):
     """
     Parameters:
     ----------
@@ -99,15 +99,24 @@ def LinearModelFit(X, y):
     original_demand = f(0) # zero percent change in price 
     max_rev_demand  = f(best_price_change) # best percent change in price 
 
-    return best_price_change, original_demand, max_rev_demand
+    if output == 'demand':
+        return demand_prediction
+    else:
+        return best_price_change, original_demand, max_rev_demand
 
 
-def main(original_price):
+def UpdateModel(prices_changes,demand_curve,product_id):
+    """
+    Update model with csv file or pickled object 
+    """    
+    return 
+
+
+def main(fname, original_price):
     """
     Note that the revenue computed is what it would have been 
     if the price is best up. 
     """
-    fname = '../../cleaned_data/simulations/sales.csv'
 
     time,X,y = ReadSalesData(fname)
     n_weeks = len(time)
@@ -132,17 +141,17 @@ def main(original_price):
         else:
             best_price_changes[i], original_demand[i], best_demand[i] = LinearModelFit(temp_x, temp_y)
 
-
-
     orig_revenue = ComputeCumulativeRevenue(original_price,0.0,original_demand)
     best_revenue = ComputeCumulativeRevenue(original_price,best_price_changes,best_demand)
+    
+    prediction_data = np.array([best_price_changes,orig_revenue,best_revenue])
+    df = pd.DataFrame(data=prediction_data.T, columns=['best_price_changes','origin_revenue','best_revenue'])
+    df.to_csv('../../cleaned_data/simulations/reveune.csv',index=False)
 
-    #plt.plot(time,orig_revenue)
-    #plt.plot(time,best_revenue)
-    #plt.xlim([0,52])
-    #plt.show()
-
-    return best_price_changes, orig_revenue, best_revenue
+    #return best_price_changes, orig_revenue, best_revenue
 
 if __name__ == '__main__':
-    main(8.19)
+
+    original_price = 8.19 
+    fname = '../../cleaned_data/simulations/sales.csv'
+    main(fname, original_price)
