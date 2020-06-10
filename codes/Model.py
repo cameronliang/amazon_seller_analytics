@@ -12,37 +12,73 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from scipy.interpolate import interp1d
+
+def FindCriticalPrice(prices_changes,revenue_curve):
+    """
+    Need to make sure that second derivative is negative (i.e., concave down)
+    """
+    from scipy.interpolate import InterpolatedUnivariateSpline
+    f = InterpolatedUnivariateSpline(prices_changes,revenue_curve,k=4)
+    cr_pts = f.derivative().roots()
+    return cr_pts[0] # assume there is only one local/global maximum 
+
+def ComputeCumulativeRevenue(price,price_changes,demand):
+    """
+    Parameters:
+    ----------
+    price: float
+        price of product [dollars]
+    price_changes: float
+        fraction of price changes
+    demand: 
+        estimates of units ordered
+    """
+    revenue = np.cumsum((1+price_changes)*price*demand)
+    return revenue
+
+def ReadSalesData(filename):
+    df = pd.read_csv(filename)
+    time = df['weeks']
+    X = df.drop(['weeks','demand'],axis=1) # remove weeks and demands, select features only
+    y = df['demand']
+    return time,X,y
 
 def LinearModelFit(X, y):
     """
     Parameters:
     ----------
     X: array_like
-        shape 
-    x: array_like
         features that the model depends on; the dependent 
         variables. 
         session: number of unique visitor 
         page_views: number of page views combined all visitors 
         buy_box_perc: percetange on the buybux shared by competitors. 
         price: price in dollars
-    Returns
+    y: array
+        demand or actual products ordered. 
+    
+    Returns:
     ----------
-    param: float
-        number of units ordered
+    best_price_change: float 
+        price change in percentage relative to current price that optimize 
+        the revenue
+    max_revenue: float
+        revenue given the best price change. 
     """
     from sklearn.linear_model import LinearRegression
     model = LinearRegression()
+    
+    # make sure slope is negative for price, positive for buybox, etc. 
     model.fit(X,y)
     param = np.concatenate(([model.intercept_],model.coef_))
 
     # make projection 
     most_recent_features = np.array(X.iloc[-1]) # last row 
-    input_delta_prices = X.T.iloc[0]
+    input_delta_prices = X.T.iloc[0]  # get the first column of data - i.e., the price changes. 
 
     array_size = 100
-    n_params = 5
-    prices_changes = np.linspace(-0.5,2,array_size)
+    prices_changes = np.linspace(-0.8,2,array_size)
     demand_prediction = np.zeros(len(prices_changes))
     for i in range(array_size):
         # note that other parameters might depend on price. so this works only in linear model. 
@@ -50,34 +86,63 @@ def LinearModelFit(X, y):
         features = np.concatenate(([prices_changes[i]],most_recent_features[1:]))
         demand_prediction[i] = model.predict(features.reshape(1,-1))    
 
-    # 1. compute best price based on current features other than price. 
+    # Compute best price based on current features other than price. 
     # this converts the n-dimensional to 1D model of demand just a function of price. 
     # use feature of the most recent month as an approximate for the next month. 
     revenue_curve = demand_prediction * prices_changes 
-    best_price_change, max_revenue = FindCriticalPrice(prices_changes,revenue_curve)
+    best_price_change = FindCriticalPrice(prices_changes,revenue_curve)
 
-    return best_price_change, max_revenue
+    # note: these demands elasticity is assumed to be independent of time. 
+    # what was the baseline ---> why do the demands change in the first place? because i am changing the price. 
+    # so the based line of demand is when I don't change the price, given the model. 
+    f = interp1d(prices_changes,demand_prediction)
+    original_demand = f(0) # zero percent change in price 
+    max_rev_demand  = f(best_price_change) # best percent change in price 
 
-def FindCriticalPrice(x,y):
-    from scipy.interpolate import InterpolatedUnivariateSpline
-    f = InterpolatedUnivariateSpline(x,y,k=4)
-    cr_pts = f.derivative().roots()
-    max_revenue = f(cr_pts)
-    return cr_pts[0], max_revenue[0]
+    return best_price_change, original_demand, max_rev_demand
 
-def ReadSalesData(filename):
-    df = pd.read_csv(filename)
-    X = df.drop(['weeks','demand'],axis=1) # remove weeks and demands, select features only
-    y = df['demand']
-    return X,y
 
-def main():
+def main(original_price):
+    """
+    Note that the revenue computed is what it would have been 
+    if the price is best up. 
+    """
     fname = '../../cleaned_data/simulations/sales.csv'
-    X,y = ReadSalesData(fname)
-    best_price_change, revenue_change = LinearModelFit(X, y)
-    return best_price_change, revenue_change
+
+    time,X,y = ReadSalesData(fname)
+    n_weeks = len(time)
+    
+    # accumate arrays of best_demand, original demand, and best_price_change array. 
+    best_price_changes = np.zeros(n_weeks)
+    original_demand = np.zeros(n_weeks)
+    best_demand = np.zeros(n_weeks)
+
+    week_counter = 0 # number 
+    for i in range(1,n_weeks): # 198
+        week_counter += 1
+        temp_x = X.iloc[:i] # all features. 
+        temp_y  = y.iloc[:i]
+
+        if i < 10: # do not recommend price change within 10 timesteps to collect data for fit. 
+            temp_x = np.array(temp_x)[-1]
+            temp_y = np.array(temp_y)[-1]
+            best_price_changes[i] =  temp_x[0] # just assume original price. 
+            original_demand[i] = temp_y 
+            best_demand[i] = temp_y # assume original demand 
+        else:
+            best_price_changes[i], original_demand[i], best_demand[i] = LinearModelFit(temp_x, temp_y)
+
+
+
+    orig_revenue = ComputeCumulativeRevenue(original_price,0.0,original_demand)
+    best_revenue = ComputeCumulativeRevenue(original_price,best_price_changes,best_demand)
+
+    #plt.plot(time,orig_revenue)
+    #plt.plot(time,best_revenue)
+    #plt.xlim([0,52])
+    #plt.show()
+
+    return best_price_changes, orig_revenue, best_revenue
 
 if __name__ == '__main__':
-    
-    
-    main()
+    main(8.19)

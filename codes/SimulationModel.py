@@ -1,6 +1,6 @@
 ################################################################################
 #
-# SimulationModel.py 		(c) Cameron Liang 
+# SimulationModel.py 	(c) Cameron Liang 
 #						Insight Data Science Fellowship Program 
 #     				    cameron.liang@gmail.com
 #
@@ -103,6 +103,9 @@ def generate_model_data():
     return 
 
 def FitModel():
+    """
+    Simulation tests for parameters convergence. 
+    """
     from sklearn.linear_model import LinearRegression
     
     # read in data 
