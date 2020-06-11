@@ -9,6 +9,7 @@
 ################################################################################
 
 import numpy as np
+import os
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -37,10 +38,12 @@ def ComputeCumulativeRevenue(price,price_changes,demand):
     revenue = np.cumsum((1+price_changes)*price*demand)
     return revenue
 
-def ReadSalesData(filename):
+def ReadSalesData(filename,product_id):
     df = pd.read_csv(filename)
+
+    df = df.loc[df['product_id'] == product_id]
     time = df['weeks']
-    X = df.drop(['weeks','demand'],axis=1) # remove weeks and demands, select features only
+    X = df.drop(['weeks','demand','product_id'],axis=1) # remove weeks and demands, select features only
     y = df['demand']
     return time,X,y
 
@@ -112,13 +115,13 @@ def UpdateModel(prices_changes,demand_curve,product_id):
     return 
 
 
-def main(fname, original_price):
+def main(fname, original_price, product_id):
     """
     Note that the revenue computed is what it would have been 
     if the price is best up. 
     """
 
-    time,X,y = ReadSalesData(fname)
+    time,X,y = ReadSalesData(fname,product_id)
     n_weeks = len(time)
     
     # accumate arrays of best_demand, original demand, and best_price_change array. 
@@ -144,14 +147,23 @@ def main(fname, original_price):
     orig_revenue = ComputeCumulativeRevenue(original_price,0.0,original_demand)
     best_revenue = ComputeCumulativeRevenue(original_price,best_price_changes,best_demand)
     
-    prediction_data = np.array([best_price_changes,orig_revenue,best_revenue])
-    df = pd.DataFrame(data=prediction_data.T, columns=['best_price_changes','origin_revenue','best_revenue'])
-    df.to_csv('../../cleaned_data/simulations/reveune.csv',index=False)
+    prediction_data = np.array([time,best_price_changes,orig_revenue,best_revenue])
+    df = pd.DataFrame(data=prediction_data.T, columns=['time','best_price_changes','origin_revenue','best_revenue'])
+    df['product_id'] = product_id
+
+    output_fname = '../../cleaned_data/simulations/reveune.csv'
+    if os.path.isfile(output_fname):
+        with open(output_fname,'a') as f: 
+            df.to_csv(f,index=False, header=False)
+    else:
+        df.to_csv(output_fname,index=False)
 
     #return best_price_changes, orig_revenue, best_revenue
 
 if __name__ == '__main__':
 
-    original_price = 8.19 
+    import sys
+    product_id = sys.argv[1]
+    original_price = float(sys.argv[2])
     fname = '../../cleaned_data/simulations/sales.csv'
-    main(fname, original_price)
+    main(fname, original_price,product_id)
