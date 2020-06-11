@@ -11,9 +11,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import os
 
-
-def _mock_params():
+def _mock_params(product):
     """
     parameters of the mock model 
     a_feature: demand = a_feature * feature; slope of the line (linear model)
@@ -25,11 +25,20 @@ def _mock_params():
     a_buybox_perc = 0.2 # how buyers buy given buybox % 
     a_session = 0.05  # conversion rate of session into units order 
     a_pageviews = 0.03 # conversion rate of pageviews into units order
-    
-    params = [a_constant,a_price,a_buybox_perc, a_session,a_pageviews]
-    return np.array(params)
+    params_prod1 = np.array([a_constant,a_price,a_buybox_perc, a_session,a_pageviews])
 
-def generate_model_data():
+    a_constant  = 20  # combination of constants from the features in linear model 
+    a_price = -10.5     # elasticity of product given price. 
+    a_buybox_perc = 0.3 # how buyers buy given buybox % 
+    a_session = 0.015  # conversion rate of session into units order 
+    a_pageviews = 0.06 # conversion rate of pageviews into units order
+    params_prod2 = np.array([a_constant,a_price,a_buybox_perc, a_session,a_pageviews])
+    
+    params_dict = {'prod1':params_prod1, 'prod2':params_prod2}
+
+    return params_dict[product]
+
+def generate_model_data(product_id):
     """
     todo: add holiday effects in each generation of data. 
     D_sub = Dt + D(x), where D_sub is modulated by Dt. 
@@ -55,7 +64,7 @@ def generate_model_data():
     # user input: 
     percent_price_change = 0.2 # percentage allowed to change. 
     # 20% deviation of price 
-    sample_size = 200 # 20 weeks of data, each month has feature = [price, buybox, session, page_views]
+    sample_size = 52 # 20 weeks of data, each month has feature = [price, buybox, session, page_views]
     price_lower_bound = (-percent_price_change) # or manufacturer allowed lowest price. 
     price_upper_bound = (percent_price_change)
 
@@ -70,7 +79,7 @@ def generate_model_data():
     page_views = np.random.uniform(0,max_page_views,sample_size)
     
     
-    params = _mock_params()
+    params = _mock_params('prod1')
     
     features = np.array([delta_prices, buybox, sessions, page_views]).T
 
@@ -98,8 +107,13 @@ def generate_model_data():
     weeks = np.arange(1,sample_size+1,1)
     model_data = np.array([weeks,delta_prices,buybox,sessions,page_views,model_demand])
     df = pd.DataFrame(data=model_data.T, columns=['weeks','delta_price','buybox','sessions','pageviews','demand'])
-    df.to_csv('../../cleaned_data/simulations/sales.csv',index=False)
-
+    df['product_id'] = product_id
+    output_fname = '../../cleaned_data/simulations/sales.csv'
+    if os.path.isfile(output_fname):
+        with open(output_fname,'a') as f: 
+            df.to_csv(f,index=False, header=False)
+    else:
+        df.to_csv(output_fname,index=False)
     return 
 
 def FitModel():
@@ -127,6 +141,7 @@ def FitModel():
         param = np.concatenate(([model.intercept_],model.coef_))
         params[i-2] = param
 
+    
     df = pd.DataFrame(data=params,columns=['intercept','price_coef','buybox_coef','sessions_coef','pageviews_coef'])
     df.to_csv('../../cleaned_data/simulations/params.csv')
 
@@ -134,8 +149,9 @@ def FitModel():
 
 
 if __name__ == '__main__':
-    
-    #generate_model_data()
+    import sys 
+    product_id = sys.argv[1]
+    generate_model_data(product_id)
     #FitModel()
 
     
