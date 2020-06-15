@@ -1,6 +1,6 @@
 ################################################################################
 #
-# SimulationModel.py 	(c) Cameron Liang 
+# Simulation.py 	(c) Cameron Liang 
 #						Insight Data Science Fellowship Program 
 #     				    cameron.liang@gmail.com
 #
@@ -65,8 +65,8 @@ def generate_model_data(product_id):
     percent_price_change = 0.2 # percentage allowed to change. 
     # 20% deviation of price 
     sample_size = 52 # weeks of data, each has feature = [price, buybox, session, page_views]
-    price_lower_bound = (-percent_price_change) # or manufacturer allowed lowest price. 
-    price_upper_bound = (percent_price_change)
+    price_lower_bound = -percent_price_change # or manufacturer allowed lowest price. 
+    price_upper_bound = percent_price_change
 
     delta_prices = np.random.normal(0,percent_price_change,sample_size)
     
@@ -80,7 +80,6 @@ def generate_model_data(product_id):
     
     
     params = _mock_params('prod1')
-    
     features = np.array([delta_prices, buybox, sessions, page_views]).T
 
     # shorten this in pythonic way 
