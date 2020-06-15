@@ -64,7 +64,7 @@ def generate_model_data(product_id):
     # user input: 
     percent_price_change = 0.2 # percentage allowed to change. 
     # 20% deviation of price 
-    sample_size = 52 # 20 weeks of data, each month has feature = [price, buybox, session, page_views]
+    sample_size = 52 # weeks of data, each has feature = [price, buybox, session, page_views]
     price_lower_bound = (-percent_price_change) # or manufacturer allowed lowest price. 
     price_upper_bound = (percent_price_change)
 
