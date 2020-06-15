@@ -107,14 +107,6 @@ def LinearModelFit(X, y, product_id = None, output = None):
     else:
         return best_price_change, original_demand, max_rev_demand
 
-
-def UpdateModel(prices_changes,demand_curve,product_id):
-    """
-    Update model with csv file or pickled object 
-    """    
-    return 
-
-
 def main(fname, original_price, product_id):
     """
     Note that the revenue computed is what it would have been 
