@@ -103,19 +103,16 @@ def LinearModelFit(X, y, product_id = None, output = None):
     max_rev_demand  = f(best_price_change) # best percent change in price 
 
     if output == 'demand':
-        return demand_prediction
+        return f
     else:
         return best_price_change, original_demand, max_rev_demand
 
-def main(fname, original_price, product_id):
+def OutputRevenue(time,X,y, original_price, product_id):
     """
     Note that the revenue computed is what it would have been 
     if the price is best up. 
     """
-
-    time,X,y = ReadSalesData(fname,product_id)
     n_weeks = len(time)
-    
     # accumate arrays of best_demand, original demand, and best_price_change array. 
     best_price_changes = np.zeros(n_weeks)
     original_demand = np.zeros(n_weeks)
@@ -149,8 +146,6 @@ def main(fname, original_price, product_id):
             df.to_csv(f,index=False, header=False)
     else:
         df.to_csv(output_fname,index=False)
-
-    #return best_price_changes, orig_revenue, best_revenue
 
 if __name__ == '__main__':
 
